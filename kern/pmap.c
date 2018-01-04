@@ -102,8 +102,14 @@ boot_alloc(uint32_t n)
 	// to a multiple of PGSIZE.
 	//
 	// LAB 2: Your code here.
+	result = nextfree;
+	nextfree = ROUNDUP(nextfree + n, PGSIZE);
 
-	return NULL;
+	if (nextfree > (char *) (npages * PGSIZE + KERNBASE)) {
+		panic("boot_alloc: out of physical memory!");
+	}
+
+	return result;
 }
 
 // Set up a two-level page table:
@@ -123,9 +129,6 @@ mem_init(void)
 
 	// Find out how much memory the machine has (npages & npages_basemem).
 	i386_detect_memory();
-
-	// Remove this line when you're ready to test this function.
-	panic("mem_init: This function is not finished\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
@@ -148,7 +151,7 @@ mem_init(void)
 	// array.  'npages' is the number of physical pages in memory.  Use memset
 	// to initialize all fields of each struct PageInfo to 0.
 	// Your code goes here:
-
+	pages = boot_alloc(npages * sizeof(struct PageInfo));
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -160,6 +163,7 @@ mem_init(void)
 
 	check_page_free_list(1);
 	check_page_alloc();
+	panic("mem_init: This function is not finished\n");
 	check_page();
 
 	//////////////////////////////////////////////////////////////////////
@@ -252,7 +256,33 @@ page_init(void)
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
 	size_t i;
-	for (i = 0; i < npages; i++) {
+
+	// put all pages from base memory in the free list except for page 0
+	// i.e. pages in the range [4KB, 640KB)
+	for (i = 1; i < npages_basemem; i++) {
+		pages[i].pp_ref = 0;
+		pages[i].pp_link = page_free_list;
+		page_free_list = &pages[i];
+	}
+
+	// DON'T PUT ANY OF THESE TO THE FREELIST:
+
+	// [640KB, 1MB) --> the IO hole
+	// [1MB, end) --> where the kernel is loaded
+	//     'end' (provided by linker) points to the end of kernel's .bss section
+	//     if you do readelf -l obj/kern/kernel you'll see that this is the last section
+	//     included in the last segment that is loaded in memory from the kernel binary
+	// [end, PADDR(boot_alloc(0)] --> used by kernel after booting
+	//                                (e.g. the 'pages' array is stored here)
+	//     boot_alloc allocates space from 'end' onward and when called with 0
+	//     it returns the next available free address
+
+	// first available address from extended memory
+	uint32_t free_addr = (uint32_t) ROUNDUP(PADDR(boot_alloc(0)), PGSIZE);
+
+	// put available pages from extended memory in the free list
+	// i.e. pages in the range [PADDR(boot_alloc(0), end of physical memory)
+	for (i = free_addr / PGSIZE; i < npages; i++) {
 		pages[i].pp_ref = 0;
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
@@ -274,8 +304,19 @@ page_init(void)
 struct PageInfo *
 page_alloc(int alloc_flags)
 {
-	// Fill this function in
-	return 0;
+	struct PageInfo *page = page_free_list;
+	if (!page) {
+		return NULL;
+	}
+
+	page_free_list = page->pp_link;
+	page->pp_link = NULL;
+
+	if (alloc_flags & ALLOC_ZERO) {
+		memset(page2kva(page), 0, PGSIZE);
+	}
+
+	return page;
 }
 
 //
@@ -288,6 +329,13 @@ page_free(struct PageInfo *pp)
 	// Fill this function in
 	// Hint: You may want to panic if pp->pp_ref is nonzero or
 	// pp->pp_link is not NULL.
+	if (!pp || pp->pp_ref != 0 || pp->pp_link != NULL) {
+		panic("page_free: invalid page was given!");
+	}
+
+	pp->pp_ref = 0;
+	pp->pp_link = page_free_list;
+	page_free_list = pp;
 }
 
 //
