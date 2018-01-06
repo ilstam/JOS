@@ -164,7 +164,6 @@ mem_init(void)
 	check_page_free_list(1);
 	check_page_alloc();
 	check_page();
-	panic("mem_init: This function is not finished\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// Now we set up virtual memory
@@ -176,6 +175,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, UPAGES, PTSIZE, PADDR(pages), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -188,6 +188,7 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -197,6 +198,10 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+
+	// 0x100000000 is actually 0 because we have 4-byte size_t
+	// but let's leave it like this in case something changes
+	boot_map_region(kern_pgdir, KERNBASE, ((size_t) 0x100000000 - KERNBASE), 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -389,7 +394,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		}
 		new_page->pp_ref++;
 
-		*pde = page2pa(new_page) | PTE_P | PTE_U;
+		*pde = page2pa(new_page) | PTE_P | PTE_U | PTE_W;
 	}
 
 	page_table = KADDR(PTE_ADDR(*pde));
@@ -410,10 +415,11 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-	uintptr_t va_limit = va + size;
+	// don't do the following because it may overflow:
+	// uintptr_t va_limit = va + size;
 	pte_t *pte;
 
-	for (; va < va_limit; va += PGSIZE, pa += PGSIZE) {
+	for (int i = 0; i < size / PGSIZE; va += PGSIZE, pa += PGSIZE, i++) {
 		pte = pgdir_walk(pgdir, (const void *) va, 1);
 		if (!pte) {
 			panic("boot_map_region: could not allocate memory");
