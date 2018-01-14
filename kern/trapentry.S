@@ -60,18 +60,20 @@ TRAPHANDLER_NOEC(trap_handler_5, 5)
 TRAPHANDLER_NOEC(trap_handler_6, 6)
 TRAPHANDLER_NOEC(trap_handler_7, 7)
 TRAPHANDLER(trap_handler_8, 8)
-TRAPHANDLER(trap_handler_9, 9) // reserved / we MUST fill the gap
+.space 4 // reserved - we MUST fill the gap
 TRAPHANDLER(trap_handler_10, 10)
 TRAPHANDLER(trap_handler_11, 11)
 TRAPHANDLER(trap_handler_12, 12)
 TRAPHANDLER(trap_handler_13, 13)
 TRAPHANDLER(trap_handler_14, 14)
-TRAPHANDLER(trap_handler_15, 15) // reserved / we MUST fill the gap
+.space 4 // reserved - we MUST fill the gap
 TRAPHANDLER_NOEC(trap_handler_16, 16)
 TRAPHANDLER(trap_handler_17, 17)
 TRAPHANDLER_NOEC(trap_handler_18, 18)
 TRAPHANDLER_NOEC(trap_handler_19, 19)
 // interrupt vectors 20-31 are reserved
+.space 112 // fill the gap for vectors 20-47
+TRAPHANDLER_NOEC(trap_handler_48, T_SYSCALL)
 
 // we need to fill the gaps above in order to be able to index properly
 // in the handlers array from within the C code
