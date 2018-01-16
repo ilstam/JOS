@@ -578,7 +578,17 @@ static uintptr_t user_mem_check_addr;
 int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	// LAB 3: Your code here.
+	pte_t *pte;
+	const void *addr = ROUNDDOWN(va, PGSIZE);
+	const void *end = ROUNDUP(va + len, PGSIZE); // overflow hazard?
+
+	for (; addr < end; addr += PGSIZE) {
+		pte = pgdir_walk(env->env_pgdir, addr, 0);
+		if (((int) addr >= ULIM) || !pte || !(*pte & perm & PTE_P)) {
+			user_mem_check_addr = (uintptr_t) (addr < va ? va : addr);
+			return -E_FAULT;
+		}
+	}
 
 	return 0;
 }
