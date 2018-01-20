@@ -5,6 +5,8 @@
 #include <kern/pmap.h>
 #include <kern/monitor.h>
 
+#define NEXTENV(env) (envs + ((env) - envs + 1) % NENV)
+
 void sched_halt(void);
 
 // Choose a user environment to run and run it.
@@ -29,6 +31,20 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
+	struct Env *env = curenv ? NEXTENV(curenv) : envs;
+	struct Env *beggined_from = env;
+
+	do {
+		if (env && env->env_status == ENV_RUNNABLE) {
+			env_run(env);
+		}
+
+		env = NEXTENV(env);
+	} while (env != beggined_from);
+
+	if (curenv && curenv->env_status == ENV_RUNNING) {
+		env_run(curenv);
+	}
 
 	// sched_halt never returns
 	sched_halt();
