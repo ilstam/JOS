@@ -672,7 +672,7 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 
 	for (; addr < end; addr += PGSIZE) {
 		pte = pgdir_walk(env->env_pgdir, addr, 0);
-		if (((int) addr >= ULIM) || !pte || !(*pte & perm & PTE_P)) {
+		if (((int) addr >= ULIM) || !pte || !(*pte & PTE_P) || (*pte & perm) != perm) {
 			user_mem_check_addr = (uintptr_t) (addr < va ? va : addr);
 			return -E_FAULT;
 		}
