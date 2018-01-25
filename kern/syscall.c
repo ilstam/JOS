@@ -188,7 +188,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 		return retval;
 	}
 
-	if ((int) va >= UTOP || (int) va % PGSIZE || !(perm & PTE_U) || !(perm & PTE_W) || perm & ~PTE_SYSCALL) {
+	if ((int) va >= UTOP || (int) va % PGSIZE || !(perm & PTE_U) || !(perm & PTE_P) || perm & ~PTE_SYSCALL) {
 		return -E_INVAL;
 	}
 
@@ -233,7 +233,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 
 	// LAB 4: Your code here.
 	if ((int) srcva >= UTOP || (int) dstva >= UTOP || (int) srcva % PGSIZE || (int) dstva % PGSIZE
-	|| !(perm & PTE_U) || !(perm & PTE_W) || perm & ~PTE_SYSCALL) {
+	|| !(perm & PTE_U) || !(perm & PTE_P) || perm & ~PTE_SYSCALL) {
 		return -E_INVAL;
 	}
 
@@ -251,7 +251,7 @@ sys_page_map(envid_t srcenvid, void *srcva,
 		return -E_INVAL;
 	}
 
-	if (!(*pte & PTE_W) && perm & PTE_W) {
+	if (!(*pte & PTE_W) && (perm & PTE_W)) {
 		return -E_INVAL;
 	}
 
