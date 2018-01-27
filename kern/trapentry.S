@@ -73,7 +73,28 @@ TRAPHANDLER(trap_handler_17, 17)
 TRAPHANDLER_NOEC(trap_handler_18, 18)
 TRAPHANDLER_NOEC(trap_handler_19, 19)
 // interrupt vectors 20-31 are reserved
-.space 112 // fill the gap for vectors 20-47
+
+.space 48 // fill the gap for vectors 20-31
+
+// IRQ handlers
+
+TRAPHANDLER_NOEC(trap_handler_32, 32)
+TRAPHANDLER_NOEC(trap_handler_33, 33)
+TRAPHANDLER_NOEC(trap_handler_34, 34)
+TRAPHANDLER_NOEC(trap_handler_35, 35)
+TRAPHANDLER_NOEC(trap_handler_36, 36)
+TRAPHANDLER_NOEC(trap_handler_37, 37)
+TRAPHANDLER_NOEC(trap_handler_38, 38)
+TRAPHANDLER_NOEC(trap_handler_39, 39)
+TRAPHANDLER_NOEC(trap_handler_40, 40)
+TRAPHANDLER_NOEC(trap_handler_41, 41)
+TRAPHANDLER_NOEC(trap_handler_42, 42)
+TRAPHANDLER_NOEC(trap_handler_43, 43)
+TRAPHANDLER_NOEC(trap_handler_44, 44)
+TRAPHANDLER_NOEC(trap_handler_45, 45)
+TRAPHANDLER_NOEC(trap_handler_46, 46)
+TRAPHANDLER_NOEC(trap_handler_47, 47)
+
 TRAPHANDLER_NOEC(trap_handler_48, T_SYSCALL)
 
 // we need to fill the gaps above in order to be able to index properly
