@@ -148,8 +148,35 @@ fs_init(void)
 static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
-       // LAB 5: Your code here.
-       panic("file_block_walk not implemented");
+	// LAB 5: Your code here.
+	if (ppdiskbno == NULL) {
+		panic("file_block_walk: ppdiskbno is NULL");
+	}
+
+	if (filebno >= NDIRECT + NINDIRECT) {
+		return -E_INVAL;
+	}
+
+	if (filebno < NDIRECT) {
+		*ppdiskbno = &f->f_direct[filebno];
+		return 0;
+	}
+
+	if (!f->f_indirect) {
+		if (!alloc) {
+			return -E_NOT_FOUND;
+		}
+
+		int newblock = alloc_block();
+		if (newblock < 0) {
+			return -E_NO_DISK;
+		}
+
+		f->f_indirect = newblock;
+	}
+
+	*ppdiskbno = (uint32_t *) diskaddr(f->f_indirect) + (filebno - NDIRECT);
+	return 0;
 }
 
 // Set *blk to the address in memory where the filebno'th
@@ -163,8 +190,24 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 int
 file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
-       // LAB 5: Your code here.
-       panic("file_get_block not implemented");
+	// LAB 5: Your code here.
+	//
+	uint32_t *pdiskbno;
+	int retval = file_block_walk(f, filebno, &pdiskbno, true);
+
+	if (retval < 0) {
+		return retval;
+	}
+
+	if (*pdiskbno == 0) { // if block is not allocated
+		if ((retval = alloc_block()) < 0) {
+			return retval;
+		}
+		*pdiskbno = retval;
+	}
+
+	*blk = diskaddr(*pdiskbno);
+	return 0;
 }
 
 // Try to find a file named "name" in dir.  If so, set *file to it.
