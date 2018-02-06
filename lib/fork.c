@@ -73,7 +73,9 @@ duppage(envid_t envid, unsigned pn)
 	pte_t pte = uvpt[pn];
 	void *addr = (void *) (pn * PGSIZE);
 
-	if (pte & PTE_W || pte & PTE_COW) {
+	if (pte & PTE_SHARE) {
+		r = sys_page_map(0, addr, envid, addr, PTE_SYSCALL);
+	} else if (pte & PTE_W || pte & PTE_COW) {
 		r = sys_page_map(0, addr, envid, addr, PTE_COW | PTE_U | PTE_P);
 		if (r == 0 && !(pte & PTE_COW)) {
 			r = sys_page_map(0, addr, 0, addr, PTE_COW | PTE_U | PTE_P);
