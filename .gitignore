@@ -17,3 +17,5 @@
 /myapi.key
 /.suf
 tags
+__pycache__/*
+cscope.*
