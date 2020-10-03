@@ -26,6 +26,10 @@ enum {
 	E_NOT_EXEC	,	// File not a valid executable
 	E_NOT_SUPP	,	// Operation not supported
 
+	// Ethernet error codes
+	E_FRAME_TOO_LARGE ,     // The given frame is too large to transmit
+	E_TX_QUEUE_FULL   ,     // The transmission queue is full
+
 	MAXERROR
 };
 

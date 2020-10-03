@@ -18,6 +18,9 @@
 #define E1000_TCTL_PSP    0x00000008    /* pad short packets */
 #define E1000_TCTL_COLD   0x003ff000    /* collision distance */
 
+#define E1000_TXD_CMD_EOP    0x00000001 /* End of Packet */
+#define E1000_TXD_CMD_RS     0x00000008 /* Report Status */
+#define E1000_TXD_STAT_DD    0x00000001 /* Descriptor Done */
 
 #define MAX_TX_BUF_SIZE  1518
 #define NUM_TX_DESC        64 /* Number of transmit descriptors -
@@ -35,5 +38,7 @@ struct e1000_tx_desc {
 } __attribute__((packed));
 
 int e1000_attach(struct pci_func *pcif);
+
+int e1000_transmit(void *data, size_t len);
 
 #endif	// JOS_KERN_E1000_H
