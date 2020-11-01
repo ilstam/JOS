@@ -8,6 +8,8 @@
 struct e1000_tx_desc tx_queue[NUM_TX_DESC] __attribute__((aligned(16)));
 char tx_buffers[NUM_TX_DESC][MAX_TX_BUF_SIZE];
 
+struct e1000_rx_desc rx_queue[NUM_RX_DESC] __attribute__((aligned(16)));
+char rx_buffers[NUM_RX_DESC][RX_BUF_SIZE];
 
 volatile void *reg_base; /* corresponds to BAR[0] */
 
@@ -17,12 +19,11 @@ int e1000_attach(struct pci_func *pcif)
 	pci_func_enable(pcif);
 	reg_base = mmio_map_region(pcif->reg_base[0], pcif->reg_size[0]);
 
-	/* initialize the transmit descriptors */
+	/* transmit initialization */
+
 	for (int i = 0; i < NUM_TX_DESC; i++) {
 		tx_queue[i].addr = PADDR(tx_buffers[i]);
 	}
-
-	/* transmit initialization */
 
 	E1000_REG(E1000_TDBAH) = 0;
 	E1000_REG(E1000_TDBAL) = PADDR(tx_queue);
@@ -36,6 +37,26 @@ int e1000_attach(struct pci_func *pcif)
 	E1000_REG(E1000_TCTL) |= (E1000_TCTL_COLD & (0x40 << 12));
 
 	E1000_REG(E1000_TIPG) = 0 | 10 | 4 << 10 | 6 << 20;
+
+	/* receive initialization */
+
+	for (int i = 0; i < NUM_RX_DESC; i++) {
+		rx_queue[i].addr = PADDR(rx_buffers[i]);
+	}
+
+	E1000_REG(E1000_RAL) = QEMU_MAC_LOW;
+	E1000_REG(E1000_RAH) = QEMU_MAC_HIGH | E1000_RAH_AV;
+
+	E1000_REG(E1000_RDBAH) = 0;
+	E1000_REG(E1000_RDBAL) = PADDR(rx_queue);
+
+	E1000_REG(E1000_RDLEN) = sizeof(rx_queue);
+
+	E1000_REG(E1000_RDH) = 0;
+	E1000_REG(E1000_RDT) = NUM_RX_DESC;
+
+	E1000_REG(E1000_RCTL) = (0 | E1000_RCTL_EN | E1000_RCTL_RDMTS_HALF |
+	                         E1000_RCTL_SZ_2048 | E1000_RCTL_SECRC);
 
 	return 0;
 }
