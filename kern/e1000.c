@@ -53,7 +53,7 @@ int e1000_attach(struct pci_func *pcif)
 	E1000_REG(E1000_RDLEN) = sizeof(rx_queue);
 
 	E1000_REG(E1000_RDH) = 0;
-	E1000_REG(E1000_RDT) = NUM_RX_DESC;
+	E1000_REG(E1000_RDT) = NUM_RX_DESC - 1;
 
 	E1000_REG(E1000_RCTL) = (0 | E1000_RCTL_EN | E1000_RCTL_RDMTS_HALF |
 	                         E1000_RCTL_SZ_2048 | E1000_RCTL_SECRC);
@@ -70,7 +70,7 @@ int e1000_transmit(void *data, size_t len)
 
 	if (!(next->status & E1000_TXD_STAT_DD) && next->cmd & E1000_TXD_CMD_RS) {
 		/* This frame hasn't been processed by the hardware yet. */
-		return E_TX_QUEUE_FULL;
+		return -E_TX_QUEUE_FULL;
 	}
 
 	memcpy(tx_buffers[E1000_REG(E1000_TDT)], data, len);
@@ -81,4 +81,23 @@ int e1000_transmit(void *data, size_t len)
 	E1000_REG(E1000_TDT) = (E1000_REG(E1000_TDT) + 1) % NUM_TX_DESC;
 
 	return 0;
+}
+
+int e1000_receive(void *buf, size_t len)
+{
+	int next_idx = (E1000_REG(E1000_RDT) + 1) % NUM_RX_DESC;
+	struct e1000_rx_desc *next = &rx_queue[next_idx];
+
+	if (!(next->status & E1000_RXD_STAT_DD))
+		return -E_RX_QUEUE_EMPTY;
+
+	if (next->length > len)
+		return -E_FRAME_TOO_LARGE;
+
+	memcpy(buf, rx_buffers[next_idx], next->length);
+	next->status &= ~E1000_RXD_STAT_DD;
+
+	E1000_REG(E1000_RDT) = next_idx;
+
+	return next->length;
 }

@@ -29,6 +29,7 @@ enum {
 	// Ethernet error codes
 	E_FRAME_TOO_LARGE ,     // The given frame is too large to transmit
 	E_TX_QUEUE_FULL   ,     // The transmission queue is full
+	E_RX_QUEUE_EMPTY  ,     // The reception queue is full
 
 	MAXERROR
 };

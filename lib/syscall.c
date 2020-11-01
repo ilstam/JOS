@@ -128,3 +128,9 @@ sys_transmit_frame(void *data, size_t len)
 {
 	return syscall(SYS_transmit_frame, 0, (uint32_t) data, len, 0, 0, 0);
 }
+
+int
+sys_receive_frame(void *buf, size_t len)
+{
+	return syscall(SYS_receive_frame, 0, (uint32_t) buf, len, 0, 0, 0);
+}

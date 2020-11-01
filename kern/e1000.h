@@ -48,6 +48,8 @@
 #define E1000_RCTL_SZ_2048        0x00000000    /* rx buffer size 2048 */
 #define E1000_RCTL_SECRC          0x04000000    /* Strip Ethernet CRC */
 
+#define E1000_RXD_STAT_DD         0x01    /* Descriptor Done */
+
 #define RX_BUF_SIZE      2048
 #define NUM_RX_DESC       128 /* Number of receive descriptors -
                                  JOS's tests require at least 128 */
@@ -76,7 +78,7 @@ struct e1000_rx_desc {
 
 
 int e1000_attach(struct pci_func *pcif);
-
 int e1000_transmit(void *data, size_t len);
+int e1000_receive(void *buf, size_t len);
 
 #endif	// JOS_KERN_E1000_H
